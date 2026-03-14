@@ -1,9 +1,6 @@
 CREATE DATABASE IF NOT EXISTS jobdb;
 USE jobdb;
 
-/* ------------------------------------------------------------------------- */
-/* PART 1: SAFELY DROP EXISTING TABLES (Reverse Dependency Order)            */
-/* ------------------------------------------------------------------------- */
 DROP TABLE IF EXISTS Transaction_Ledger;
 DROP TABLE IF EXISTS Student_Payout_Method;
 DROP TABLE IF EXISTS Employer_Payment_Method;
@@ -20,10 +17,6 @@ DROP TABLE IF EXISTS Opportunity;
 DROP TABLE IF EXISTS Application;
 DROP TABLE IF EXISTS Employer;
 DROP TABLE IF EXISTS Student;
-
-/* ------------------------------------------------------------------------- */
-/* PART 2: CREATE TABLES (DDL)                                               */
-/* ------------------------------------------------------------------------- */
 
 CREATE TABLE Student (
     StudentID INT AUTO_INCREMENT PRIMARY KEY,
@@ -42,7 +35,7 @@ CREATE TABLE Employer (
     EmployerID INT AUTO_INCREMENT PRIMARY KEY,
     BusinessName VARCHAR(100) NOT NULL,
     VerifiedIdentity CHAR(1) DEFAULT 'N',
-    TrustScore NUMERIC(3,2),
+    TrustScore NUMERIC(3, 2),
     CHECK (VerifiedIdentity IN ('Y', 'N')),
     CHECK (TrustScore BETWEEN 0.00 AND 5.00)
 );
@@ -116,7 +109,7 @@ CREATE TABLE MilestoneLedger (
     ApprovalStatus VARCHAR(20),
     SubmissionDate DATE,
     FOREIGN KEY (OppID) REFERENCES Opportunity(OppID),
-    CHECK (ApprovalStatus IN ('Pending', 'Approved', 'Rejected', 'Paid')) -- FIXED: Added 'Paid'
+    CHECK (ApprovalStatus IN ('Pending', 'Approved', 'Rejected', 'Paid'))
 );
 
 CREATE TABLE ProjWallet (
@@ -190,42 +183,30 @@ CREATE TABLE Interview (
     CHECK (ApplicationStatus IN ('Scheduled', 'Completed', 'Cancelled'))
 );
 
-/* ------------------------------------------------------------------------- */
-/* PART 3: INDEXES                                                           */
-/* ------------------------------------------------------------------------- */
 CREATE INDEX idx_student_lastname ON Student(LastName);
 CREATE INDEX idx_student_Zipcode ON Student(Zipcode);
 CREATE INDEX idx_employer_name ON Employer(BusinessName);
 CREATE INDEX idx_opp_roletitle ON Opportunity(RoleTitle);
 CREATE INDEX idx_app_status ON Application(Status);
 
-/* ------------------------------------------------------------------------- */
-/* PART 4: DUMMY DATA INSERTION (Adapted for INT Auto-Increment Schema)      */
-/* ------------------------------------------------------------------------- */
-
--- 1. Insert Students (Using IIITD Roll Numbers as the StudentID)
 INSERT INTO Student (StudentID, FirstName, LastName, AcademicAffiliation, ReliabilityScore, Street, City, State, Zipcode) VALUES
 (2024111, 'Arsh', 'Ahluwalia', 'IIIT Delhi', 4.90, 'Okhla Phase III', 'New Delhi', 'Delhi', '110020'),
 (2024321, 'Luvya', 'Nishad', 'IIIT Delhi', 4.85, 'Govind Puri', 'New Delhi', 'Delhi', '110019'),
 (2024322, 'Madhav', 'Gautam', 'IIIT Delhi', 4.80, 'Kalkaji', 'New Delhi', 'Delhi', '110019');
 
--- 2. Insert Employers
 INSERT INTO Employer (EmployerID, BusinessName, VerifiedIdentity, TrustScore) VALUES
 (1, 'Zomato Ltd', 'Y', 4.80),
 (2, 'Swiggy Instamart', 'N', 4.20);
 
--- 3. Insert Opportunities
 INSERT INTO Opportunity (OppID, RequiredStudents, Type, RoleTitle, Description, Status, City, State, Zipcode) VALUES
 (1, 2, 'Internship', 'React Developer', 'Build dashboard for Zomato delivery partners', 'Active', 'New Delhi', 'Delhi', '110020'),
 (2, 1, 'Freelance', 'UI/UX Designer', 'Redesign checkout flow for Swiggy', 'Pending', 'Remote', 'NA', '000000');
 
--- 4. Insert Applications
 INSERT INTO Application (ApplicationID, ApplicationDate, Status) VALUES
 (1, '2026-02-01', 'Accepted'),
 (2, '2026-02-02', 'Pending'),
 (3, '2026-02-03', 'Pending');
 
--- 5. Insert Skills
 INSERT INTO SkillTags (StudentID, Skill) VALUES
 (2024111, 'React'),
 (2024111, 'Java'),
@@ -239,26 +220,21 @@ INSERT INTO RequiredSkills (OppID, Skill) VALUES
 (1, 'Java'),
 (2, 'Figma');
 
--- 6. Link Posts (Employer -> Opportunity)
 INSERT INTO Posts (EmployerID, OppID) VALUES
 (1, 1),
 (2, 2);
 
--- 7. Link Job Applications (Student -> App -> Opportunity)
 INSERT INTO Job_application (StudentID, ApplicationID, OppID) VALUES
 (2024111, 1, 1),
 (2024321, 2, 1),
 (2024322, 3, 2);
 
--- 8. Fund Wallet
 INSERT INTO ProjWallet (OppID, TotalAmount, Status) VALUES
 (1, 15000.00, 'Escrow');
 
--- 9. Create Milestones
 INSERT INTO MilestoneLedger (OppID, MilestoneID, Payout, Deadline, Description, ApprovalStatus) VALUES
 (1, 1, 5000.00, '2026-03-01', 'Frontend Prototype', 'Pending');
 
--- 10. Populate New Payment/Transaction Tables (To prevent empty JOINs later)
 INSERT INTO Employer_Payment_Method (employer_id, method_type, payment_token) VALUES
 (1, 'Corporate UPI', 'UPI_TOKEN_ZOMATO_123');
 
