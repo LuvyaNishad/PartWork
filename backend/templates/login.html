@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Login - Job Platform</title>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <form action="/login" method="POST" class="bg-white p-8 rounded-2xl shadow-xl w-96 border border-gray-200">
+        <h2 class="text-2xl font-black mb-6 text-center text-gray-800">Platform Login</h2>
+        <input type="text" name="user_id" placeholder="Enter ID (e.g., 101 or 501)" required class="w-full border border-gray-300 p-3 mb-4 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+        <select name="user_type" class="w-full border border-gray-300 p-3 mb-6 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            <option value="student">Student</option>
+            <option value="employer">Employer</option>
+        </select>
+        <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition">Login</button>
+        {% if error %}
+        <p class="text-red-500 font-bold text-center mt-4 text-sm">{{ error }}</p>
+        {% endif %}
+    </form>
+</body>
+</html>
