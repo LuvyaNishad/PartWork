@@ -189,57 +189,98 @@ CREATE INDEX idx_employer_name ON Employer(BusinessName);
 CREATE INDEX idx_opp_roletitle ON Opportunity(RoleTitle);
 CREATE INDEX idx_app_status ON Application(Status);
 
+/* ========================================================================= */
+/* PART 4: COMPREHENSIVE DUMMY DATA INSERTION                                */
+/* ========================================================================= */
+
+-- 1. Insert Students (The Gig Workers)
 INSERT INTO Student (StudentID, FirstName, LastName, AcademicAffiliation, ReliabilityScore, Street, City, State, Zipcode) VALUES
-(2024111, 'Arsh', 'Ahluwalia', 'IIIT Delhi', 4.90, 'Okhla Phase III', 'New Delhi', 'Delhi', '110020'),
-(2024321, 'Luvya', 'Nishad', 'IIIT Delhi', 4.85, 'Govind Puri', 'New Delhi', 'Delhi', '110019'),
-(2024322, 'Madhav', 'Gautam', 'IIIT Delhi', 4.80, 'Kalkaji', 'New Delhi', 'Delhi', '110019');
+                                                                                                                              (2024111, 'Arsh', 'Ahluwalia', 'IIIT Delhi', 4.90, 'Okhla Phase III', 'New Delhi', 'Delhi', '110020'),
+                                                                                                                              (2024321, 'Luvya', 'Nishad', 'IIIT Delhi', 4.85, 'Govind Puri', 'New Delhi', 'Delhi', '110019'),
+                                                                                                                              (2024322, 'Madhav', 'Gautam', 'IIIT Delhi', 4.80, 'Kalkaji', 'New Delhi', 'Delhi', '110019'),
+                                                                                                                              (2024500, 'Aisha', 'Sharma', 'IIT Delhi', 4.95, 'Hauz Khas', 'New Delhi', 'Delhi', '110016'),
+                                                                                                                              (2024501, 'Rohan', 'Verma', 'DTU', 4.20, 'Rohini', 'New Delhi', 'Delhi', '110085');
 
+-- 2. Insert Employers (The Tech Giants & Startups)
 INSERT INTO Employer (EmployerID, BusinessName, VerifiedIdentity, TrustScore) VALUES
-(1, 'Zomato Ltd', 'Y', 4.80),
-(2, 'Swiggy Instamart', 'N', 4.20);
+                                                                                  (1, 'Zomato Ltd', 'Y', 4.80),
+                                                                                  (2, 'Swiggy Instamart', 'N', 4.20),
+                                                                                  (3, 'Google India', 'Y', 5.00),
+                                                                                  (4, 'Insomniac Games', 'Y', 4.90),
+                                                                                  (5, 'LocalByte Tech', 'N', 3.50);
 
+-- 3. Insert Opportunities (The Job Board)
 INSERT INTO Opportunity (OppID, RequiredStudents, Type, RoleTitle, Description, Status, City, State, Zipcode) VALUES
-(1, 2, 'Internship', 'React Developer', 'Build dashboard for Zomato delivery partners', 'Active', 'New Delhi', 'Delhi', '110020'),
-(2, 1, 'Freelance', 'UI/UX Designer', 'Redesign checkout flow for Swiggy', 'Pending', 'Remote', 'NA', '000000');
+                                                                                                                  (1, 2, 'Internship', 'React Developer', 'Build the new driver dashboard interface.', 'Active', 'New Delhi', 'Delhi', '110020'),
+                                                                                                                  (2, 1, 'Freelance', 'UI/UX Designer', 'Redesign checkout flow and user journey.', 'Active', 'Remote', 'NA', '000000'),
+                                                                                                                  (3, 1, 'Internship', 'Backend API Engineer', 'Optimize search algorithms for maps.', 'Active', 'Bengaluru', 'Karnataka', '560001'),
+                                                                                                                  (4, 3, 'Part-time', 'Game Engine Scripter', 'Write C++ scripts for NPC behaviors.', 'Active', 'Remote', 'NA', '000000'),
+                                                                                                                  (5, 1, 'Freelance', 'Database Administrator', 'Normalize local startup SQL schema.', 'Assigned', 'Gurugram', 'Haryana', '122018');
 
-INSERT INTO Application (ApplicationID, ApplicationDate, Status) VALUES
-(1, '2026-02-01', 'Accepted'),
-(2, '2026-02-02', 'Pending'),
-(3, '2026-02-03', 'Pending');
-
+-- 4. Insert Skills Portfolio
 INSERT INTO SkillTags (StudentID, Skill) VALUES
-(2024111, 'React'),
-(2024111, 'Java'),
-(2024321, 'SQL'),
-(2024321, 'Python'),
-(2024322, 'Figma'),
-(2024322, 'Illustrator');
+                                             (2024111, 'React'), (2024111, 'Java'), (2024111, 'Node.js'),
+                                             (2024321, 'SQL'), (2024321, 'Python'), (2024321, 'UI/UX'), (2024321, 'Figma'),
+                                             (2024322, 'Figma'), (2024322, 'Illustrator'), (2024322, 'CSS'),
+                                             (2024500, 'C++'), (2024500, 'Java'), (2024500, 'Algorithms'),
+                                             (2024501, 'SQL'), (2024501, 'MongoDB');
 
+-- 5. Insert Required Skills for Jobs
 INSERT INTO RequiredSkills (OppID, Skill) VALUES
-(1, 'React'),
-(1, 'Java'),
-(2, 'Figma');
+                                              (1, 'React'), (1, 'Node.js'),
+                                              (2, 'Figma'), (2, 'UI/UX'),
+                                              (3, 'Java'), (3, 'Algorithms'),
+                                              (4, 'C++'),
+                                              (5, 'SQL');
 
+-- 6. Link Posts (Who posted what?)
 INSERT INTO Posts (EmployerID, OppID) VALUES
-(1, 1),
-(2, 2);
+                                          (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
 
+-- 7. Insert Applications (The Pipeline)
+INSERT INTO Application (ApplicationID, ApplicationDate, Status) VALUES
+                                                                     (1, '2026-03-01', 'Accepted'),
+                                                                     (2, '2026-03-02', 'Pending'),
+                                                                     (3, '2026-03-05', 'Pending'),
+                                                                     (4, '2026-03-10', 'Rejected'),
+                                                                     (5, '2026-03-12', 'Accepted'),
+                                                                     (6, '2026-03-15', 'Pending');
+
+-- 8. Link Job Applications (Student -> App -> Job)
 INSERT INTO Job_application (StudentID, ApplicationID, OppID) VALUES
-(2024111, 1, 1),
-(2024321, 2, 1),
-(2024322, 3, 2);
+                                                                  (2024111, 1, 1), -- Arsh got the Zomato gig
+                                                                  (2024321, 2, 2), -- Luvya applied for Swiggy Design
+                                                                  (2024322, 3, 2), -- Madhav also applied for Swiggy Design
+                                                                  (2024501, 4, 3), -- Rohan rejected from Google
+                                                                  (2024321, 5, 5), -- Luvya accepted for LocalByte DB tuning
+                                                                  (2024500, 6, 4); -- Aisha pending for Insomniac
 
+-- 9. Assigned To (The Official Hires)
+INSERT INTO Assigned_to (StudentID, OppID) VALUES
+                                               (2024111, 1),
+                                               (2024321, 5);
+
+-- 10. Financials: Escrow Wallets
 INSERT INTO ProjWallet (OppID, TotalAmount, Status) VALUES
-(1, 15000.00, 'Escrow');
+                                                        (1, 25000.00, 'Escrow'),
+                                                        (5, 8000.00, 'Released');
 
-INSERT INTO MilestoneLedger (OppID, MilestoneID, Payout, Deadline, Description, ApprovalStatus) VALUES
-(1, 1, 5000.00, '2026-03-01', 'Frontend Prototype', 'Pending');
+-- 11. Financials: Milestones
+INSERT INTO MilestoneLedger (OppID, MilestoneID, Payout, Deadline, Description, ApprovalStatus, SubmissionDate) VALUES
+                                                                                                                    (1, 1, 10000.00, '2026-03-20', 'Frontend Login Screen', 'Pending', NULL),
+                                                                                                                    (1, 2, 15000.00, '2026-04-10', 'Dashboard Integration', 'Pending', NULL),
+                                                                                                                    (5, 3, 8000.00, '2026-03-15', 'Schema Normalization to 3NF', 'Paid', '2026-03-14');
 
+-- 12. Financials: Payment Methods
 INSERT INTO Employer_Payment_Method (employer_id, method_type, payment_token) VALUES
-(1, 'Corporate UPI', 'UPI_TOKEN_ZOMATO_123');
+                                                                                  (1, 'Corporate Card', 'CC_ZOMATO_9999'),
+                                                                                  (5, 'UPI', 'UPI_LOCALBYTE_1111');
 
 INSERT INTO Student_Payout_Method (student_id, method_type, payout_token) VALUES
-(2024111, 'Google Pay', 'GPAY_TOKEN_ARSH_456');
+                                                                              (2024111, 'Bank Transfer', 'BANK_ARSH_0001'),
+                                                                              (2024321, 'Google Pay', 'GPAY_LUVYA_0002');
 
-INSERT INTO Transaction_Ledger (wallet_id, amount, transaction_type, transaction_hash, payment_method_id) VALUES
-(1, 15000.00, 'Deposit', '0xABC123HASH_DEPOSIT', 1);
+-- 13. Financials: The Transactions
+INSERT INTO Transaction_Ledger (wallet_id, amount, transaction_type, transaction_hash, payment_method_id, payout_method_id, milestone_id) VALUES
+                                                                                                                                              (1, 25000.00, 'Deposit', '0xDEP_ZOMATO_1122', 1, NULL, NULL),
+                                                                                                                                              (5, 8000.00, 'Payout', '0xPAY_LUVYA_5566', NULL, 2, 3);                                                                                                                                        (5, 8000.00, 'Payout', '0xPAY_LUVYA_5566', NULL, 2, 3);
