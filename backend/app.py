@@ -1,27 +1,22 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import database
-import os
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), "templates"))
+app = Flask(__name__)
 app.secret_key = 'super_secret_resume_key' 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error_msg = None
-
     if request.method == 'POST':
-        user_id = (request.form.get('user_id') or request.form.get('id', '')).strip()
-        user_type = (request.form.get('user_type') or request.form.get('type', '')).lower()
-
-        user = database.verify_user(user_id, user_type)
-
-        if user:
-            session['user_id'] = user_id
-            session['user_type'] = user_type
-            return redirect(url_for('account'))
-        else:
-            error_msg = "Invalid ID for this account type."
-
+        uid = request.form.get('user_id')
+        utype = request.form.get('user_type')
+        if database.verify_user(uid, utype):
+            session['user_id'] = uid
+            session['user_type'] = utype
+            if utype == 'employer':
+                return redirect(url_for('account'))
+            return redirect(url_for('home'))
+        error_msg = "Login failed: Invalid ID for this account type."
     return render_template('login.html', error=error_msg)
 
 @app.route('/logout')
@@ -47,50 +42,46 @@ def search():
 
 @app.route('/account')
 def account():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
+    if 'user_id' not in session: return redirect(url_for('login'))
     user_type = session.get('user_type')
-    user_id = session['user_id']
-    
     if user_type == 'employer':
-        posts = database.get_employer_data(user_id)
+        posts = database.get_employer_data(session['user_id'])
         return render_template('account.html', posts=posts, user_type=user_type)
     else:
-        apps = database.get_student_applications(user_id)
-        profile = database.get_student_profile(user_id)
+        profile = database.get_student_profile(session['user_id'])
+        apps = database.get_student_applications(session['user_id'])
         return render_template('account.html', apps=apps, profile=profile, user_type=user_type)
 
 # --- APIs ---
-@app.route('/api/job/<opp_id>')
+@app.route('/api/job/<int:opp_id>')
 def api_job_details(opp_id):
     if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
     student_id = session['user_id'] if session['user_type'] == 'student' else None
     job = database.get_job_details(opp_id, student_id)
     return jsonify(job) if job else (jsonify({"error": "Not found"}), 404)
 
-@app.route('/api/details/<opp_id>')
+@app.route('/api/details/<int:opp_id>')
 def api_details(opp_id):
     if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
     return jsonify(database.get_app_details(opp_id))
 
-@app.route('/api/student_app/<app_id>/<opp_id>')
+@app.route('/api/student_app/<int:app_id>/<int:opp_id>')
 def api_student_app_details(app_id, opp_id):
     if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
     return jsonify(database.get_student_app_details(app_id, opp_id))
 
-@app.route('/api/applicant_details/<app_id>')
+@app.route('/api/applicant_details/<int:app_id>')
 def api_applicant_details(app_id):
     if 'user_id' not in session or session['user_type'] != 'employer': return jsonify({"error": "Unauthorized"}), 401
     return jsonify(database.get_applicant_profile(app_id))
 
-@app.route('/api/accept_app/<app_id>', methods=['POST'])
+@app.route('/api/accept_app/<int:app_id>', methods=['POST'])
 def api_accept_app(app_id):
     if 'user_id' not in session or session['user_type'] != 'employer': return jsonify({"success": False}), 401
     success = database.accept_application(app_id)
     return jsonify({"success": success})
 
-@app.route('/api/apply/<opp_id>', methods=['POST'])
+@app.route('/api/apply/<int:opp_id>', methods=['POST'])
 def api_apply(opp_id):
     if 'user_id' not in session or session['user_type'] != 'student': 
         return jsonify({"success": False, "message": "Unauthorized"}), 401
@@ -111,7 +102,7 @@ def api_create_job():
     success = database.create_job_post(session['user_id'], data['Title'], data['Description'], data['Location'], data['Skills'])
     return jsonify({"success": success})
 
-@app.route('/api/edit_job/<opp_id>', methods=['POST'])
+@app.route('/api/edit_job/<int:opp_id>', methods=['POST'])
 def api_edit_job(opp_id):
     if 'user_id' not in session or session['user_type'] != 'employer': return jsonify({"success": False}), 401
     data = request.json

@@ -1,35 +1,20 @@
 import mysql.connector
-import uuid
 
 def get_db_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root123",
-        database="jobdb"
+        host='localhost',
+        user='root',
+        password='root123',  # Change this to your MySQL password
+        database='jobdb'
     )
 
 def verify_user(user_id, user_type):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
-    if user_type == "student":
-        try:
-            student_id = int(user_id)
-            cursor.execute(
-                "SELECT * FROM Student WHERE StudentID = %s",
-                (student_id,)
-            )
-        except ValueError:
-            return None
-    else:
-        cursor.execute(
-            "SELECT * FROM Employer WHERE EmployerID = %s",
-            (user_id,)
-        )
-
+    table = "Student" if user_type == "student" else "Employer"
+    id_col = "StudentID" if user_type == "student" else "EmployerID"
+    cursor.execute(f"SELECT * FROM {table} WHERE {id_col} = %s", (user_id,))
     user = cursor.fetchone()
-
     cursor.close()
     conn.close()
     return user
@@ -37,18 +22,18 @@ def verify_user(user_id, user_type):
 def get_personalized_feed(student_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
     sql = """
-    SELECT DISTINCT O.*, E.BusinessName
-    FROM Opportunity O
-    JOIN Posts P ON O.OppID = P.OppID
-    JOIN Employer E ON P.EmployerID = E.EmployerID
-    WHERE O.Status = 'Active'
+        SELECT DISTINCT O.*, E.BusinessName FROM Opportunity O
+        JOIN Posts P ON O.OppID = P.OppID
+        JOIN Employer E ON P.EmployerID = E.EmployerID
+        JOIN RequiredSkills RS ON O.OppID = RS.OppID
+        JOIN Student S ON S.Zipcode = O.Zipcode
+        WHERE S.StudentID = %s 
+        AND RS.Skill IN (SELECT Skill FROM SkillTags WHERE StudentID = %s)
+        AND O.Status = 'Active';
     """
-
-    cursor.execute(sql)
+    cursor.execute(sql, (student_id, student_id))
     results = cursor.fetchall()
-
     cursor.close()
     conn.close()
     return results
@@ -71,10 +56,10 @@ def get_all_active_jobs():
 def get_student_profile(student_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM Student WHERE StudentID = %s", (int(student_id),))
+    cursor.execute("SELECT * FROM Student WHERE StudentID = %s", (student_id,))
     profile = cursor.fetchone()
     if profile:
-        cursor.execute("SELECT Skill FROM SkillTags WHERE StudentID = %s", (int(student_id),))
+        cursor.execute("SELECT Skill FROM SkillTags WHERE StudentID = %s", (student_id,))
         profile['Skills'] = [s['Skill'] for s in cursor.fetchall()] 
     cursor.close()
     conn.close()
@@ -84,10 +69,9 @@ def add_student_skill(student_id, skill):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        sid = int(student_id)
-        cursor.execute("SELECT * FROM SkillTags WHERE StudentID = %s AND Skill = %s", (sid, skill))
+        cursor.execute("SELECT * FROM SkillTags WHERE StudentID = %s AND Skill = %s", (student_id, skill))
         if not cursor.fetchone():
-            cursor.execute("INSERT INTO SkillTags (StudentID, Skill) VALUES (%s, %s)", (sid, skill))
+            cursor.execute("INSERT INTO SkillTags (StudentID, Skill) VALUES (%s, %s)", (student_id, skill))
             conn.commit()
         success = True
     except:
@@ -100,20 +84,17 @@ def add_student_skill(student_id, skill):
 def get_student_applications(student_id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
     sql = """
-    SELECT O.RoleTitle, E.BusinessName, A.Status
-    FROM Job_application JA
-    JOIN Opportunity O ON JA.OppID = O.OppID
-    JOIN Application A ON JA.ApplicationID = A.ApplicationID
-    JOIN Posts P ON O.OppID = P.OppID
-    JOIN Employer E ON P.EmployerID = E.EmployerID
-    WHERE JA.StudentID = %s
+        SELECT O.RoleTitle, E.BusinessName, A.Status, A.ApplicationDate, O.OppID, A.ApplicationID, O.City
+        FROM Job_application JA
+        JOIN Application A ON JA.ApplicationID = A.ApplicationID
+        JOIN Opportunity O ON JA.OppID = O.OppID
+        JOIN Posts P ON O.OppID = P.OppID
+        JOIN Employer E ON P.EmployerID = E.EmployerID
+        WHERE JA.StudentID = %s ORDER BY A.ApplicationDate DESC;
     """
-
-    cursor.execute(sql, (int(student_id),))
+    cursor.execute(sql, (student_id,))
     apps = cursor.fetchall()
-
     cursor.close()
     conn.close()
     return apps
@@ -152,8 +133,8 @@ def create_job_post(emp_id, title, desc, city, skills_str):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        opp_id = 'OP_' + uuid.uuid4().hex[:6].upper()
-        cursor.execute("INSERT INTO Opportunity (OppID, RoleTitle, Description, City, Status) VALUES (%s, %s, %s, %s, 'Active')", (opp_id, title, desc, city))
+        cursor.execute("INSERT INTO Opportunity (RoleTitle, Description, City, Status) VALUES (%s, %s, %s, 'Active')", (title, desc, city))
+        opp_id = cursor.lastrowid
         cursor.execute("INSERT INTO Posts (EmployerID, OppID) VALUES (%s, %s)", (emp_id, opp_id))
         if skills_str:
             skills = [s.strip() for s in skills_str.split(',')]
@@ -263,14 +244,13 @@ def apply_for_job(student_id, opp_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
-        sid = int(student_id)
-        cursor.execute("SELECT 1 FROM Job_application WHERE StudentID = %s AND OppID = %s", (sid, opp_id))
+        cursor.execute("SELECT 1 FROM Job_application WHERE StudentID = %s AND OppID = %s", (student_id, opp_id))
         if cursor.fetchone():
             return False, "You have already applied for this role."
         
-        app_id = 'APP_' + uuid.uuid4().hex[:6].upper()
-        cursor.execute("INSERT INTO Application (ApplicationID, ApplicationDate, Status) VALUES (%s, CURDATE(), 'Pending')", (app_id,))
-        cursor.execute("INSERT INTO Job_application (ApplicationID, OppID, StudentID) VALUES (%s, %s, %s)", (app_id, opp_id, sid))
+        cursor.execute("INSERT INTO Application (ApplicationDate, Status) VALUES (CURDATE(), 'Pending')")
+        app_id = cursor.lastrowid
+        cursor.execute("INSERT INTO Job_application (ApplicationID, OppID, StudentID) VALUES (%s, %s, %s)", (app_id, opp_id, student_id))
         conn.commit()
         success, msg = True, "Application Submitted Successfully!"
     except Exception as e:
