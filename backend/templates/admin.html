@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>PartWork - Admin Panel</title>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <nav class="bg-slate-900 text-white px-10 py-4 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl font-bold text-red-500">PartWork</span>
+                <span class="bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded tracking-widest shadow-sm">Admin Control</span>
+            </div>
+            <a href="/logout" class="text-sm font-medium text-slate-300 hover:text-white transition">Sign Out</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-10 py-10">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Performance Ledger</h1>
+                <p class="text-sm text-slate-500 mt-1">Monitor platform feedback and manually override Impact Scores.</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 border-b border-slate-200 text-slate-600">
+                    <tr>
+                        <th class="py-4 px-6 font-bold">Ledger ID</th>
+                        <th class="py-4 px-6 font-bold">Project Role</th>
+                        <th class="py-4 px-6 font-bold">Reviewer Type</th>
+                        <th class="py-4 px-6 font-bold">Feedback Note</th>
+                        <th class="py-4 px-6 font-bold text-center">Impact Score</th>
+                        <th class="py-4 px-6 font-bold text-right">Admin Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for entry in ledger %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-4 px-6 text-slate-500 font-mono text-xs">#{{ entry.LedgerID }}</td>
+                        <td class="py-4 px-6 font-medium text-slate-800">{{ entry.RoleTitle }} <br><span class="text-[10px] font-normal text-slate-400">App ID: {{ entry.ApplicationID }}</span></td>
+                        <td class="py-4 px-6">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase 
+                                {% if entry.ReviewerRole == 'Employer' %}bg-blue-100 text-blue-700
+                                {% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ entry.ReviewerRole }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-slate-600 italic max-w-xs truncate" title="{{ entry.ManualFeedback }}">
+                            "{{ entry.ManualFeedback }}"
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <span class="text-lg font-bold text-slate-800">{{ entry.ImpactScore }}</span><span class="text-xs text-slate-400">/5</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button onclick="editScore({{ entry.LedgerID }}, {{ entry.ImpactScore }})" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer">
+                                Override
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="py-10 text-center text-slate-400 italic">No ledger entries found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        function editScore(ledgerId, currentScore) {
+            const newScore = prompt(`Enter new Impact Score for Ledger #${ledgerId} (1 to 5):`, currentScore);
+            if (newScore === null) return; 
+            const parsedScore = parseFloat(newScore);
+            
+            if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 5) {
+                alert("Invalid score. Please enter a number between 0 and 5.");
+                return;
+            }
+
+            fetch(`/api/admin/edit_score/${ledgerId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_score: parsedScore })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    location.reload(); 
+                } else {
+                    alert("Database Error: Could not update score.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

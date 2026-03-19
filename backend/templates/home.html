@@ -31,7 +31,7 @@
                     <p class="text-xs text-slate-500 mt-4 line-clamp-2">Required skills: {{ job.Description }}</p>
                 </div>
                 <div class="mt-6 flex justify-end">
-                    <button onclick='openJobModal({{ job.OppID }})' class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+                    <button onclick="openJobModal('{{ job.OppID }}')" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
                         Apply Now
                     </button>
                 </div>

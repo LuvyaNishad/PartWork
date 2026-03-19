@@ -22,42 +22,65 @@
     {% if user_type == 'employer' %}
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-xl font-bold">Dashboard</h1>
-            <button onclick="document.getElementById('create-modal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">
+            <button onclick="document.getElementById('create-modal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer shadow-sm">
                 + Create New Opportunity
             </button>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h2 class="text-lg font-bold mb-4">Posted Jobs</h2>
-            <table class="w-full text-left text-sm">
-                <thead>
-                    <tr class="text-slate-500 border-b border-slate-100">
-                        <th class="pb-3 font-medium">Job Title</th>
-                        <th class="pb-3 font-medium">Applicants</th>
-                        <th class="pb-3 font-medium">Action</th>
-                        <th class="pb-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    {% for post in posts %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="py-4 text-slate-800 font-medium">
-                            {{ post.RoleTitle }} 
-                            <span class="text-xs text-slate-400 ml-2">({{ post.Status }})</span>
-                        </td>
-                        <td class="py-4"><span class="text-blue-500 font-medium">{{ post.AppCount }}</span></td>
-                        <td class="py-4">
-                            <button onclick='openEmpModal({{ post.OppID }}, {{ post.RoleTitle | tojson | safe }})' class="border border-blue-300 text-blue-500 hover:bg-blue-50 px-3 py-1 rounded text-xs font-medium transition cursor-pointer">
-                                View Applicants
-                            </button>
-                        </td>
-                        <td class="py-4 text-right">
-                            <button onclick='openEditJobModal({{ post.OppID }})' class="text-slate-400 hover:text-slate-700 text-xs cursor-pointer">Edit</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="flex flex-col md:flex-row gap-6 mb-8">
+            <div class="flex-1 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold mb-4">Posted Jobs</h2>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-100">
+                            <th class="pb-3 font-medium">Job Title</th>
+                            <th class="pb-3 font-medium">Applicants</th>
+                            <th class="pb-3 font-medium">Actions</th>
+                            <th class="pb-3 font-medium"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for post in posts %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-4 text-slate-800 font-medium">
+                                {{ post.RoleTitle }} 
+                                <span class="text-xs text-slate-400 ml-2">({{ post.Status }})</span>
+                            </td>
+                            <td class="py-4"><span class="text-blue-500 font-medium">{{ post.AppCount }}</span></td>
+                            <td class="py-4 flex gap-2">
+                                <button onclick='openManageJob({{ post.OppID }}, {{ post.RoleTitle | tojson | safe }})' class="border border-blue-300 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm">
+                                    View Applicants
+                                </button>
+                                <button onclick='openMilestoneModal({{ post.OppID }}, {{ post.RoleTitle | tojson | safe }})' class="border border-green-300 text-green-700 hover:bg-green-50 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm">
+                                    Milestones
+                                </button>
+                            </td>
+                            <td class="py-4 text-right">
+                                <button onclick="openEditJobModal({{ post.OppID }})" class="text-slate-400 hover:text-slate-700 text-xs cursor-pointer underline">Edit Settings</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="w-full md:w-64 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center h-[120px]">
+                    <p class="text-xs font-medium text-slate-500 mb-1">Company Trust Score</p>
+                    <p class="text-3xl font-bold">{{ trust_score }}/5</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center h-[120px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">Billing Method</p>
+                    {% if payment_token %}
+                        <p class="text-[10px] font-mono bg-green-50 text-green-700 px-2 py-1 rounded font-bold mb-2 border border-green-100">
+                            Active: {{ payment_token }}
+                        </p>
+                        <button onclick="setupPayment()" class="text-slate-400 text-xs hover:text-slate-600 underline cursor-pointer">Change Method</button>
+                    {% else %}
+                        <button onclick="setupPayment()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm">Add Billing Method</button>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <div id="create-modal" class="hidden fixed inset-0 bg-[#F0F4F8] z-50 overflow-y-auto">
@@ -65,26 +88,45 @@
                 <a href="/" class="text-2xl font-bold text-blue-600">PartWork</a>
                 <button onclick="closeModal('create-modal')" class="text-sm font-medium text-slate-600 hover:text-slate-900 cursor-pointer">Cancel</button>
             </nav>
-            <div class="max-w-2xl mx-auto mt-10">
+            <div class="max-w-2xl mx-auto mt-10 mb-10">
                 <h1 class="text-xl font-bold mb-6 text-center">Create Opportunity Form</h1>
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 space-y-5">
-                    <div>
-                        <label class="block text-sm text-slate-600 mb-1">Job Title</label>
-                        <input type="text" id="cj-title" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300">
+                    <div><label class="block text-sm text-slate-600 mb-1">Job Title</label><input type="text" id="cj-title" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300"></div>
+                    <div><label class="block text-sm text-slate-600 mb-1">Description</label><textarea id="cj-desc" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300 h-24"></textarea></div>
+                    <div class="flex gap-4">
+                        <div class="flex-1"><label class="block text-sm text-slate-600 mb-1">Location</label><input type="text" id="cj-loc" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300"></div>
+                        <div class="flex-1"><label class="block text-sm text-slate-600 mb-1">Skills (Comma-separated)</label><input type="text" id="cj-skills" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300"></div>
                     </div>
+                    
+                    <hr class="my-6 border-slate-100">
+                    
                     <div>
-                        <label class="block text-sm text-slate-600 mb-1">Description</label>
-                        <textarea id="cj-desc" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300 h-24"></textarea>
+                        <h3 class="font-bold text-sm text-slate-800 mb-2">Define Milestones</h3>
+                        <p class="text-xs text-slate-500 mb-4">Set up the required tasks and payouts. The total will automatically fund your escrow.</p>
+                        
+                        <div id="new-job-milestones-list" class="space-y-2 mb-4"></div>
+                        
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="flex gap-2">
+                                <input type="text" id="nj-ms-desc" placeholder="Task Description" class="flex-1 bg-white border border-slate-200 px-3 py-2 rounded text-xs outline-none focus:border-blue-300">
+                                <input type="number" id="nj-ms-payout" placeholder="₹ Amount" class="w-24 bg-white border border-slate-200 px-3 py-2 rounded text-xs outline-none focus:border-blue-300">
+                                <input type="date" id="nj-ms-deadline" class="w-32 bg-white border border-slate-200 px-3 py-2 rounded text-xs outline-none focus:border-blue-300">
+                                <button type="button" onclick="addJobMilestone()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 rounded text-xs font-bold cursor-pointer transition">Add</button>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm text-slate-600 mb-1">Skills Required</label>
-                        <input type="text" id="cj-skills" placeholder="Comma-separated" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300">
+
+                    <div class="flex items-center gap-2 mt-4 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <input type="checkbox" id="cj-interview" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer">
+                        <label for="cj-interview" class="text-sm font-bold text-indigo-900 cursor-pointer">Require an Interview before hiring</label>
                     </div>
-                    <div>
-                        <label class="block text-sm text-slate-600 mb-1">Location</label>
-                        <input type="text" id="cj-loc" class="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-sm outline-none focus:border-blue-300 mb-6">
+
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex justify-between items-center mt-6">
+                        <span class="text-sm font-bold text-blue-800">Total Escrow Required:</span>
+                        <input type="number" id="cj-funds" readonly value="0" class="w-24 bg-transparent text-right text-xl font-bold text-blue-600 outline-none">
                     </div>
-                    <button onclick="submitNewJob()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg text-sm font-medium transition cursor-pointer">Submit Post</button>
+
+                    <button onclick="submitNewJob()" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg text-sm font-medium transition cursor-pointer shadow-sm">Post Job to Board</button>
                 </div>
             </div>
         </div>
@@ -95,43 +137,106 @@
                 <div class="space-y-4">
                     <input type="text" id="ej-title" class="w-full bg-slate-50 border p-2 rounded text-sm">
                     <textarea id="ej-desc" class="w-full bg-slate-50 border p-2 rounded text-sm h-20"></textarea>
-                    <div class="flex gap-4">
-                        <input type="text" id="ej-city" class="flex-1 bg-slate-50 border p-2 rounded text-sm">
-                        <input type="number" id="ej-students" class="w-24 bg-slate-50 border p-2 rounded text-sm">
-                    </div>
+                    <div class="flex gap-4"><input type="text" id="ej-city" class="flex-1 bg-slate-50 border p-2 rounded text-sm"><input type="number" id="ej-students" class="w-24 bg-slate-50 border p-2 rounded text-sm"></div>
                 </div>
-                <div class="mt-6 flex justify-end gap-3">
-                    <button onclick="closeModal('edit-job-modal')" class="text-sm font-medium text-slate-500 cursor-pointer">Cancel</button>
-                    <button id="ej-save-btn" class="bg-blue-500 text-white px-4 py-2 rounded text-sm cursor-pointer">Save</button>
+                <div class="mt-6 flex justify-end gap-3"><button onclick="closeModal('edit-job-modal')" class="text-sm font-medium text-slate-500 cursor-pointer">Cancel</button><button id="ej-save-btn" class="bg-blue-500 text-white px-4 py-2 rounded text-sm cursor-pointer shadow-sm">Save</button></div>
+            </div>
+        </div>
+
+        <div id="emp-manage-modal" class="hidden fixed inset-0 bg-[#F0F4F8] z-50 overflow-hidden flex flex-col">
+            <nav class="flex justify-between items-center px-10 py-6 max-w-7xl w-full mx-auto shrink-0">
+                <a href="/" class="text-2xl font-bold text-blue-600">PartWork</a>
+                <button onclick="closeModal('emp-manage-modal')" class="text-sm font-medium text-slate-600 hover:text-slate-900 font-bold cursor-pointer">← Back to Dashboard</button>
+            </nav>
+            
+            <div class="max-w-7xl mx-auto px-10 pb-10 w-full flex-1 flex flex-col min-h-0">
+                <div class="mb-6 shrink-0">
+                    <h1 id="emm-title" class="text-2xl font-bold text-slate-800">Loading Job...</h1>
+                    <p id="emm-loc" class="text-sm text-slate-500 mt-1">📍 Location</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+                    <div class="w-full md:w-1/3 bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700">Applicant Roster</div>
+                        <div id="emm-list" class="overflow-y-auto p-4 space-y-3 flex-1 bg-slate-50/50"></div>
+                    </div>
+
+                    <div class="w-full md:w-2/3 bg-white border border-slate-200 rounded-2xl flex flex-col shadow-sm overflow-hidden relative">
+                        <div id="emm-workspace-empty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-10 text-center bg-white z-10">
+                            <span class="text-5xl mb-4">📂</span>
+                            <p class="font-medium text-slate-500">Select an applicant from the roster</p>
+                        </div>
+                        
+                        <div id="emm-workspace-content" class="hidden flex-1 overflow-y-auto p-8 z-20 bg-white">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h2 id="emm-app-name" class="text-2xl font-bold text-slate-800"></h2>
+                                    <p id="emm-app-uni" class="text-sm text-slate-500 mt-1"></p>
+                                </div>
+                                <div id="emm-app-status-badge"></div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Verified Skills</h3>
+                                <div id="emm-app-skills" class="flex flex-wrap gap-2"></div>
+                            </div>
+
+                            <div id="emm-hire-area" class="hidden border-t border-slate-100 pt-6 text-center">
+                                <button id="emm-hire-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-2.5 rounded-lg text-sm font-bold transition shadow-sm cursor-pointer">Hire Applicant</button>
+                            </div>
+
+                            <div id="emm-interview-area" class="hidden border-t border-slate-100 pt-6 mt-6">
+                                <h3 class="text-sm font-bold text-slate-800 mb-2">Schedule Interview</h3>
+                                <p class="text-xs text-slate-500 mb-3">This role requires an interview. Schedule a time with the candidate.</p>
+                                
+                                <div id="emp-interview-controls" class="flex gap-2">
+                                    <input type="datetime-local" id="emp-interview-time" class="flex-1 border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-indigo-400">
+                                    <button id="emp-schedule-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-lg text-sm font-bold transition shadow-sm cursor-pointer">Set Time</button>
+                                </div>
+                                
+                                <div id="emp-interview-display" class="hidden mt-3 bg-indigo-50 border border-indigo-100 p-3 rounded-lg flex items-center gap-3">
+                                    <span class="text-xl">🗓️</span>
+                                    <div>
+                                        <p class="text-[10px] font-bold text-indigo-800 uppercase">Interview Scheduled For (Zoom)</p>
+                                        <p id="emp-interview-time-text" class="text-sm font-bold text-indigo-900"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="emp-rate-btn-container" class="hidden mt-6 pt-6 border-t border-slate-100">
+                                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100 text-center">
+                                    <h3 class="font-bold text-slate-800 mb-2">Project Funded!</h3>
+                                    <p class="text-xs text-slate-500 mb-4">The final milestone has been paid. Rate the student to finalize this opportunity.</p>
+                                    <button id="trigger-stu-rating" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95 cursor-pointer">
+                                        <span>⭐</span> Review Student & Complete Job
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="emp-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
-            <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-xl">
+        <div id="emp-milestone-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-xl overflow-y-auto max-h-[90vh]">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 id="em-title" class="text-lg font-bold">Applicants</h3>
-                    <button onclick="closeModal('emp-modal')" class="text-2xl text-slate-400 cursor-pointer">&times;</button>
-                </div>
-                <div id="em-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
-            </div>
-        </div>
-
-        <div id="applicant-detail-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-lg">Applicant Profile</h3>
-                    <button onclick="closeModal('applicant-detail-modal')" class="text-xl text-slate-400 cursor-pointer">&times;</button>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-xl mb-6 text-center border border-slate-100">
-                    <h2 id="ad-name" class="text-xl font-bold text-slate-800"></h2>
-                    <p id="ad-university" class="text-sm text-slate-500 mb-4"></p>
-                    <div id="ad-skills" class="flex flex-wrap gap-2 justify-center mb-4"></div>
-                </div>
-                
-                <div id="ad-action-footer" class="flex justify-center gap-4">
-                    <button onclick="closeModal('applicant-detail-modal')" class="bg-slate-200 text-slate-600 px-6 py-2 rounded-lg text-sm font-medium">Close</button>
+                    <div>
+                        <h3 id="ms-modal-title" class="font-bold text-xl text-slate-800">Job Milestones</h3>
+                        <p id="ms-hired-name" class="text-sm text-blue-600 font-bold mt-1"></p>
                     </div>
+                    <button onclick="closeModal('emp-milestone-modal')" class="text-2xl text-slate-400 cursor-pointer">&times;</button>
+                </div>
+
+                <div class="bg-green-50 border border-green-100 p-4 rounded-xl flex justify-between items-center mb-6 shadow-sm">
+                    <span class="text-sm font-bold text-green-800">Escrow Wallet Balance:</span>
+                    <span id="emp-ms-escrow" class="text-2xl font-bold text-green-700">₹0</span>
+                </div>
+
+                <div class="mb-2 border-t border-slate-100 pt-6">
+                    <h4 class="font-bold text-sm text-slate-800 mb-3 border-b pb-2">Approve Payouts</h4>
+                    <div id="emp-ms-list" class="space-y-3 mb-4"></div>
+                </div>
             </div>
         </div>
 
@@ -161,10 +266,22 @@
                     </div>
                 </div>
             </div>
-            <div class="w-full md:w-64">
+
+            <div class="w-full md:w-64 space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center h-[120px]">
                     <p class="text-xs font-medium text-slate-500 mb-1">Reliability Score</p>
                     <p class="text-3xl font-bold">{{ profile.ReliabilityScore }}/5</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center h-[120px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">Payout Method</p>
+                    {% if payment_token %}
+                        <p class="text-[10px] font-mono bg-green-50 text-green-700 px-2 py-1 rounded font-bold mb-2 border border-green-100">
+                            Active: {{ payment_token }}
+                        </p>
+                        <button onclick="setupPayment()" class="text-slate-400 text-xs hover:text-slate-600 underline cursor-pointer">Change Method</button>
+                    {% else %}
+                        <button onclick="setupPayment()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm">Link Bank Account</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -183,7 +300,7 @@
                 <tbody class="divide-y divide-slate-50">
                     {% for app in apps %}
                     <tr class="hover:bg-slate-50">
-                        <td class="py-4 text-slate-800">{{ app.RoleTitle }}</td>
+                        <td class="py-4 text-slate-800">{{ app.RoleTitle }} <span class="text-[10px] text-slate-400 ml-1">({{ app.JobStatus }})</span></td>
                         <td class="py-4 text-slate-500">{{ app.BusinessName }}</td>
                         <td class="py-4 font-medium 
                             {% if app.Status == 'Accepted' %}text-green-500
@@ -192,9 +309,9 @@
                             {% else %}text-slate-500{% endif %}">
                             {{ app.Status }}
                         </td>
-                        <td class="py-4">
-                            <button onclick='openStuModal({{ app.ApplicationID }}, {{ app.OppID }})' class="border border-blue-200 text-blue-500 rounded px-4 py-1.5 text-xs font-medium transition hover:bg-blue-50 cursor-pointer">
-                                View Details
+                        <td class="py-4 flex gap-2">
+                            <button onclick="openStuModal({{ app.ApplicationID }}, {{ app.OppID }})" class="border border-blue-200 text-blue-500 rounded px-4 py-1.5 text-xs font-medium transition hover:bg-blue-50 cursor-pointer">
+                                Manage / Details
                             </button>
                         </td>
                     </tr>
@@ -209,23 +326,50 @@
                 <button onclick="closeModal('stu-modal')" class="text-sm font-medium text-slate-600 hover:text-slate-900 font-bold cursor-pointer">← Dashboard</button>
             </nav>
             <div class="max-w-6xl mx-auto px-10 py-6">
-                <h1 class="text-xl font-semibold mb-6">Application Details Page</h1>
+                <h1 class="text-xl font-semibold mb-6">Application Details</h1>
                 <div class="flex flex-col md:flex-row gap-10">
                     <div class="flex-1">
-                        <h2 id="sm-title" class="text-2xl font-bold text-slate-800"></h2>
+                        <h2 id="sm-title" class="text-2xl font-bold text-slate-800">Loading...</h2>
                         <p id="sm-company" class="text-sm text-slate-600 mt-1"></p>
                         <p id="sm-loc" class="text-sm text-slate-400 mt-1 mb-6">📍 </p>
+
+                        <div id="sm-interview-banner" class="hidden bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-6 flex items-center gap-4 shadow-sm">
+                            <div class="bg-white p-2 rounded-lg shadow-sm border border-indigo-50 text-2xl">🗓️</div>
+                            <div>
+                                <p class="text-xs font-bold text-indigo-800 uppercase tracking-wide">Interview Request</p>
+                                <p class="text-sm text-indigo-900 mt-0.5">The employer has scheduled an interview for: <br><span id="sm-interview-time" class="font-bold text-base"></span></p>
+                            </div>
+                        </div>
+
                         <h3 class="font-bold text-slate-800 mb-2">Description</h3>
                         <p id="sm-desc" class="text-sm text-slate-600 leading-relaxed mb-6"></p>
                         <h3 class="font-bold text-slate-800 mb-2">Skills</h3>
                         <ul id="sm-skills" class="list-disc list-inside text-sm text-slate-600 space-y-1 mb-8"></ul>
+                        
+                        <div id="sm-milestone-area" class="hidden mt-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Active Milestones</h3>
+                            <div id="sm-milestone-list" class="space-y-3 mb-2"></div>
+                        </div>
+
+                        <div id="stu-rate-btn-container" class="hidden mt-6 pt-6 border-t border-slate-100">
+                            <div class="bg-green-50 p-5 rounded-2xl border border-green-100 text-center">
+                                <h3 class="font-bold text-slate-800 mb-2">Project Funded!</h3>
+                                <p class="text-xs text-slate-500 mb-4">You have received all payouts. Rate the employer to finalize this opportunity.</p>
+                                <button id="trigger-emp-rating" class="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 transform active:scale-95 cursor-pointer">
+                                    <span>🏢</span> Review Employer & Complete Job
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
+
                     <div class="w-full md:w-80">
                         <div class="bg-blue-50 border border-blue-100 p-6 rounded-2xl flex flex-col items-center justify-center text-center mb-6">
                             <p class="text-sm text-blue-600 font-medium">Application Status</p>
                             <p id="sm-status" class="text-2xl text-slate-800 font-bold mt-2"></p>
                         </div>
-                        <div class="ml-4 border-l-2 border-slate-200 pl-6 py-2 space-y-6 relative">
+                        
+                        <div class="ml-4 border-l-2 border-slate-200 pl-6 py-2 space-y-6 relative mb-8">
                             <div class="relative">
                                 <div class="absolute -left-[31px] top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-white"></div>
                                 <p class="text-sm font-bold text-slate-800">Applied</p>
@@ -240,6 +384,16 @@
                                 <p id="txt-final" class="text-sm font-medium text-slate-400">Offer / Rejected</p>
                             </div>
                         </div>
+
+                        <div id="sm-escrow-area" class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col items-center justify-center text-center hidden shadow-sm">
+                            <p class="text-sm text-slate-500 font-medium">Escrow Wallet Balance</p>
+                            <p id="sm-escrow" class="text-3xl text-green-600 font-bold mt-2">₹0</p>
+                        </div>
+                        <div id="sm-withdraw-area" class="hidden text-center mt-6">
+                            <button onclick="withdrawApplication()" class="text-xs font-bold text-red-500 hover:text-red-700 underline transition cursor-pointer">
+                                Withdraw Application
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -248,221 +402,324 @@
 
     </main>
 
+    <div id="universal-rating-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-8 relative transform transition-all">
+            <h3 id="rating-modal-title" class="text-2xl font-bold text-slate-800 mb-1">Rate Performance</h3>
+            <p class="text-sm text-slate-500 mb-6 border-b border-slate-100 pb-4">Rate the following metrics out of 5. Submitting this will officially mark the project as <span class="font-bold text-slate-700">Completed</span> in the ledger.</p>
+            
+            <div id="rating-metrics-container" class="space-y-5 mb-6">
+                </div>
+            
+            <textarea id="rating-feedback-text" placeholder="Leave an additional review note..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm h-24 outline-none focus:border-blue-400 mb-6 transition-all"></textarea>
+            
+            <button id="submit-rating-btn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-95 cursor-pointer">
+                Submit Rating & Complete Job
+            </button>
+            <button onclick="document.getElementById('universal-rating-modal').classList.add('hidden')" class="w-full mt-3 text-sm text-slate-400 hover:text-slate-600 underline cursor-pointer">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <script>
-        // Utilities
+        let currentStuAppId = null; 
+
+        function withdrawApplication() {
+            if(!confirm("Are you sure you want to withdraw your application? This cannot be undone.")) return;
+            
+            fetch(`/api/withdraw_app/${currentStuAppId}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(d => { 
+                if(d.success) location.reload(); 
+                else alert("Failed to withdraw application.");
+            });
+        }
+
         function closeModal(id) { 
             document.getElementById(id).classList.add('hidden'); 
         }
 
-        // =====================================
-        // EMPLOYER LOGIC
-        // =====================================
-        function submitNewJob() {
-            const data = {
-                Title: document.getElementById('cj-title').value,
-                Description: document.getElementById('cj-desc').value,
-                Skills: document.getElementById('cj-skills').value,
-                Location: document.getElementById('cj-loc').value
-            };
-            fetch('/api/create_job', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(data) 
-            })
-            .then(res => res.json())
-            .then(data => { 
-                if(data.success) location.reload(); 
+        function setupPayment() {
+            fetch('/api/setup_payment', { method: 'POST' }).then(res => res.json()).then(data => {
+                if(data.success) { alert("Payment method linked successfully!\nSecure Token: " + data.token); location.reload(); }
             });
         }
 
+        let currentRatingAid = null;
+        let currentRatingOid = null;
+        let currentRatingRole = null;
+
+        function openRatingModal(aid, oid, role) {
+            currentRatingAid = aid; currentRatingOid = oid; currentRatingRole = role;
+            document.getElementById('rating-modal-title').innerText = role === 'Employer' ? 'Rate Student Performance' : 'Rate Employer Experience';
+
+            const metrics = role === 'Employer' 
+                ? ['Quality of Work', 'Communication', 'Meeting Deadlines', 'Problem Solving', 'Professionalism']
+                : ['Clear Expectations', 'Mentorship & Guidance', 'Communication', 'Work Culture', 'Timely Payouts'];
+
+            let html = '';
+            metrics.forEach((m, idx) => {
+                html += `
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-sm font-bold text-slate-700">${m}</label>
+                        <span id="val-m${idx}" class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">5/5</span>
+                    </div>
+                    <input type="range" data-metric="${m}" min="1" max="5" value="5" 
+                        oninput="document.getElementById('val-m${idx}').innerText = this.value + '/5'"
+                        class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 rating-slider">
+                </div>`;
+            });
+            
+            document.getElementById('rating-metrics-container').innerHTML = html;
+            document.getElementById('universal-rating-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('submit-rating-btn').onclick = function() {
+            if(!confirm("Are you sure? This finalizes the project and sets status to 'Completed'.")) return;
+            const btn = document.getElementById('submit-rating-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerText = "Submitting to Ledger...";
+
+            const sliders = document.querySelectorAll('.rating-slider');
+            let metricsObj = {};
+            sliders.forEach(s => { metricsObj[s.getAttribute('data-metric')] = parseInt(s.value); });
+            const text = document.getElementById('rating-feedback-text').value;
+
+            const payload = {
+                reviewerRole: currentRatingRole,
+                metrics: metricsObj,
+                feedbackText: text,
+                oppId: currentRatingOid 
+            };
+
+            fetch(`/api/submit_feedback/${currentRatingAid}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(d => {
+                if(d.success) {
+                    alert("Rating saved and Project marked as Completed!");
+                    location.reload();
+                } else {
+                    alert(d.message || "Error saving rating. You may have already rated this project.");
+                    // ADDED: RESTORE BUTTON IF FAILED
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.innerText = "Submit Rating & Complete Job";
+                }
+            });
+        }
+
+        let newJobMilestones = [];
+
+        function addJobMilestone() {
+            const desc = document.getElementById('nj-ms-desc').value; const payout = document.getElementById('nj-ms-payout').value; const deadline = document.getElementById('nj-ms-deadline').value;
+            if(!desc || !payout || !deadline) return alert("Please fill all milestone fields.");
+            newJobMilestones.push({desc, payout, deadline}); renderNewJobMilestones();
+            document.getElementById('nj-ms-desc').value = ""; document.getElementById('nj-ms-payout').value = ""; document.getElementById('nj-ms-deadline').value = "";
+        }
+
+        function renderNewJobMilestones() {
+            let html = ""; let total = 0;
+            newJobMilestones.forEach((m) => {
+                total += parseFloat(m.payout);
+                html += `<div class="flex justify-between items-center text-sm bg-white p-3 border border-slate-200 rounded-lg shadow-sm mb-2"><div><p class="font-bold text-slate-800">${m.desc}</p><p class="text-xs text-slate-500">Due: ${m.deadline}</p></div><span class="font-bold text-blue-600">₹${m.payout}</span></div>`;
+            });
+            document.getElementById('new-job-milestones-list').innerHTML = html; document.getElementById('cj-funds').value = total;
+        }
+
+        function submitNewJob() {
+            const hasToken = "{{ payment_token }}" !== "None" && "{{ payment_token }}" !== ""; const funds = document.getElementById('cj-funds').value;
+            if (!hasToken) return alert("You must add a Billing Method on your dashboard before creating a funded opportunity.");
+            if (newJobMilestones.length === 0) return alert("You must define at least one milestone to create a job.");
+
+            // ADDED: Passing the Interview Checkbox Value
+            const data = { 
+                Title: document.getElementById('cj-title').value, 
+                Description: document.getElementById('cj-desc').value, 
+                Skills: document.getElementById('cj-skills').value, 
+                Location: document.getElementById('cj-loc').value, 
+                Funds: funds, 
+                Milestones: newJobMilestones,
+                InterviewRequired: document.getElementById('cj-interview').checked 
+            };
+            
+            fetch('/api/create_job', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }).then(res => res.json()).then(d => { if(d.success) location.reload(); else alert(d.message); });
+        }
+
         function openEditJobModal(oppId) {
-            fetch(`/api/job/${oppId}`)
-            .then(res => res.json())
-            .then(job => {
-                document.getElementById('ej-title').value = job.RoleTitle; 
-                document.getElementById('ej-desc').value = job.Description || ""; 
-                document.getElementById('ej-city').value = job.City; 
-                document.getElementById('ej-students').value = job.RequiredStudents;
-                
+            fetch(`/api/job/${oppId}`).then(res => res.json()).then(job => {
+                document.getElementById('ej-title').value = job.RoleTitle; document.getElementById('ej-desc').value = job.Description || ""; document.getElementById('ej-city').value = job.City; document.getElementById('ej-students').value = job.RequiredStudents;
                 document.getElementById('ej-save-btn').onclick = function() { 
-                    fetch(`/api/edit_job/${oppId}`, { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({
-                            RoleTitle: document.getElementById('ej-title').value, 
-                            Description: document.getElementById('ej-desc').value, 
-                            City: document.getElementById('ej-city').value, 
-                            RequiredStudents: document.getElementById('ej-students').value
-                        }) 
-                    })
-                    .then(res => res.json())
-                    .then(data => { 
-                        if(data.success) location.reload(); 
-                    }); 
+                    fetch(`/api/edit_job/${oppId}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ RoleTitle: document.getElementById('ej-title').value, Description: document.getElementById('ej-desc').value, City: document.getElementById('ej-city').value, RequiredStudents: document.getElementById('ej-students').value }) }).then(res => res.json()).then(d => { if(d.success) location.reload(); }); 
                 };
                 document.getElementById('edit-job-modal').classList.remove('hidden');
             });
         }
 
-        function openEmpModal(oid, title) {
-            document.getElementById('emp-modal').classList.remove('hidden'); 
-            const listDiv = document.getElementById('em-list'); 
-            listDiv.innerHTML = "<p class='text-slate-400 text-sm'>Loading applicants...</p>";
+        function openManageJob(oid, title) {
+            document.getElementById('emp-manage-modal').classList.remove('hidden'); document.getElementById('emm-title').innerText = title; document.getElementById('emm-workspace-empty').classList.remove('hidden'); document.getElementById('emm-workspace-content').classList.add('hidden');
+            fetch('/api/job/' + oid).then(res => res.json()).then(job => { document.getElementById('emm-loc').innerText = `📍 ${job.City} • Target Openings: ${job.RequiredStudents}`; });
+
+            const listDiv = document.getElementById('emm-list'); listDiv.innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>Loading roster...</p>";
             
-            fetch('/api/details/' + oid)
-            .then(res => res.json())
-            .then(data => {
-                if(data.length === 0) { 
-                    listDiv.innerHTML = "<p class='text-slate-400 text-sm'>No applicants.</p>"; 
-                    return; 
-                }
-                
-                let html = ""; 
+            fetch('/api/details/' + oid).then(res => res.json()).then(data => {
+                if(data.length === 0) { listDiv.innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>No applications yet.</p>"; return; }
+                let html = "";
                 data.forEach(a => {
-                    let badge = "";
-                    if (a.Status === 'Pending') badge = `<span class="text-blue-500 font-medium text-xs">Pending</span>`;
-                    else if (a.Status === 'Rejected') badge = `<span class="text-red-500 font-medium text-xs">Rejected</span>`;
-                    else badge = `<span class="text-green-500 font-medium text-xs">Hired</span>`;
-
-                    // Safely pass data strings
-                    const safeTitle = JSON.stringify(title).replace(/'/g, "\\'");
-
-                    html += `
-                    <div onclick='openApplicantProfile(${a.ApplicationID}, ${oid}, ${safeTitle})' class="bg-slate-50 p-4 rounded-lg flex justify-between items-center cursor-pointer hover:bg-slate-100 transition mb-2 border border-slate-100 shadow-sm">
-                        <div>
-                            <p class="font-bold text-sm text-slate-800">${a.FirstName} ${a.LastName}</p>
-                        </div>
-                        <div>${badge}</div>
-                    </div>`;
-                }); 
+                    let colorClass = a.Status === 'Pending' ? 'bg-blue-100 text-blue-700' : (a.Status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700');
+                    html += `<div onclick='loadApplicantWorkspace(${a.ApplicationID}, ${oid})' class="p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition bg-white shadow-sm mb-2"><p class="font-bold text-sm text-slate-800">${a.FirstName} ${a.LastName}</p><span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase ${colorClass}">${a.Status}</span></div>`;
+                });
                 listDiv.innerHTML = html;
             });
         }
 
-        // The fully rewritten, bug-free profile and accept logic
-        function openApplicantProfile(aid, oid, jobTitle) {
-            document.getElementById('applicant-detail-modal').classList.remove('hidden');
-            document.getElementById('ad-name').innerText = "Loading...";
-            
-            fetch('/api/applicant_details/' + aid)
-            .then(res => res.json())
-            .then(student => {
-                document.getElementById('ad-name').innerText = `${student.FirstName} ${student.LastName}`; 
-                document.getElementById('ad-university').innerText = student.AcademicAffiliation;
+        function loadApplicantWorkspace(aid, oid) {
+            document.getElementById('emm-workspace-empty').classList.add('hidden'); 
+            document.getElementById('emm-workspace-content').classList.remove('hidden'); 
+            document.getElementById('emm-app-name').innerText = "Loading profile...";
+            document.getElementById('emm-hire-area').classList.add('hidden'); 
+            document.getElementById('emp-rate-btn-container').classList.add('hidden');
+            document.getElementById('emm-interview-area').classList.add('hidden');
+
+            fetch('/api/applicant_details/' + aid).then(res => res.json()).then(student => {
+                document.getElementById('emm-app-name').innerText = `${student.FirstName} ${student.LastName}`; 
+                document.getElementById('emm-app-uni').innerText = student.AcademicAffiliation;
                 
-                let sHtml = ""; 
-                if(student.Skills) {
-                    student.Skills.forEach(skill => {
-                        sHtml += `<span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-xs font-medium">${skill}</span>`;
+                let sHtml = ""; if(student.Skills) { student.Skills.forEach(skill => { sHtml += `<span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-md text-xs font-medium border border-slate-200">${skill}</span>`; }); }
+                document.getElementById('emm-app-skills').innerHTML = sHtml || "<span class='text-slate-400 italic text-sm'>No skills listed</span>";
+
+                let badgeHtml = student.Status === 'Pending' ? `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase border border-blue-200">Pending</span>` : (student.Status === 'Rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold uppercase border border-red-200">Rejected</span>` : `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase border border-green-200">Hired</span>`);
+                document.getElementById('emm-app-status-badge').innerHTML = badgeHtml;
+
+                if (student.Status === 'Pending') {
+                    document.getElementById('emm-hire-area').classList.remove('hidden'); 
+                    document.getElementById('emm-hire-btn').onclick = function() { processAccept(aid); };
+                } 
+                
+                fetch('/api/job/' + oid).then(r => r.json()).then(job => {
+                    if (job.InterviewRequired && student.Status === 'Pending') {
+                        document.getElementById('emm-interview-area').classList.remove('hidden');
+                        if (student.InterviewTime) {
+                            document.getElementById('emp-interview-controls').classList.add('hidden');
+                            document.getElementById('emp-interview-display').classList.remove('hidden');
+                            document.getElementById('emp-interview-time-text').innerText = new Date(student.InterviewTime).toLocaleString();
+                        } else {
+                            document.getElementById('emp-interview-controls').classList.remove('hidden');
+                            document.getElementById('emp-interview-display').classList.add('hidden');
+                            document.getElementById('emp-schedule-btn').onclick = function() {
+                                const timeVal = document.getElementById('emp-interview-time').value;
+                                if(!timeVal) return alert("Please select a date and time.");
+                                fetch(`/api/schedule_interview/${aid}`, { 
+                                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({time: timeVal}) 
+                                }).then(r => r.json()).then(d => { 
+                                    if(d.success) {
+                                        alert("Interview Scheduled!");
+                                        location.reload(); 
+                                    } else {
+                                        alert("Failed to schedule interview.");
+                                    }
+                                });
+                            };
+                        }
+                    }
+
+                    if (job.Status === 'Funded' && student.Status === 'Accepted') {
+                        document.getElementById('emp-rate-btn-container').classList.remove('hidden');
+                        document.getElementById('trigger-stu-rating').onclick = () => openRatingModal(aid, oid, 'Employer');
+                    }
+                });
+            });
+        }
+
+        function processAccept(aid) { if(!confirm("Are you sure you want to hire this candidate?")) return; fetch('/api/accept_app/' + aid, { method: 'POST' }).then(res => res.json()).then(data => { if(data.success) { location.reload(); } }); }
+
+        function openMilestoneModal(oid) {
+            document.getElementById('ms-hired-name').innerText = "Checking active contracts..."; document.getElementById('emp-milestone-modal').classList.remove('hidden'); document.getElementById('emp-ms-list').innerHTML = "<p class='text-sm text-slate-400 italic'>Loading...</p>";
+            fetch('/api/job/' + oid).then(res => res.json()).then(job => {
+                document.getElementById('ms-modal-title').innerText = job.RoleTitle;
+                document.getElementById('ms-hired-name').innerText = job.HiredApplicant ? "Hired: " + job.HiredApplicant.FirstName + " " + job.HiredApplicant.LastName : "Status: Seeking Applicants";
+                document.getElementById('emp-ms-escrow').innerText = `₹${job.EscrowRemaining}`;
+                let mHtml = "";
+                if (!job.Milestones || job.Milestones.length === 0) { mHtml = "<p class='text-xs text-slate-400 italic'>No milestones found.</p>"; } else {
+                    job.Milestones.forEach(m => {
+                        let action = "";
+                        if (m.ApprovalStatus === 'Pending') { action = `<span class="text-slate-400 text-[10px] uppercase font-bold">Awaiting Student</span>`; } else if (m.ApprovalStatus === 'Submitted') { action = `<button onclick="approveMilestone(${m.MilestoneID}, ${oid})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold cursor-pointer mb-1 shadow-sm w-full">Approve</button><br><button onclick="rejectMilestone(${m.MilestoneID})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-[10px] font-bold cursor-pointer shadow-sm w-full">Reject</button>`; } else { action = `<span class="text-green-500 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded border border-green-200">Approved ✓</span>`; }
+                        mHtml += `<div class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg mb-2"><div><p class="text-sm font-bold text-slate-800">${m.Description}</p><p class="text-xs text-slate-500">Due: ${m.Deadline}</p></div><div class="text-right flex flex-col items-end gap-1"><p class="text-sm font-bold text-blue-600">₹${m.Payout}</p><div>${action}</div></div></div>`;
                     });
                 }
-                document.getElementById('ad-skills').innerHTML = sHtml || "<span class='text-slate-400 italic text-sm'>No skills listed</span>";
-                
-                // Construct footer buttons safely
-                const footer = document.getElementById('ad-action-footer');
-                footer.innerHTML = `<button onclick="closeModal('applicant-detail-modal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-6 py-2 rounded-lg text-sm font-medium transition cursor-pointer">Close</button>`;
-                
-                if(student.Status === 'Pending') {
-                    const acceptBtn = document.createElement('button');
-                    acceptBtn.className = "bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow-sm cursor-pointer";
-                    acceptBtn.innerText = "Hire Applicant";
-                    acceptBtn.onclick = () => processAccept(aid, oid, jobTitle);
-                    footer.appendChild(acceptBtn);
-                } else if (student.Status === 'Rejected') {
-                    const badge = document.createElement('span');
-                    badge.className = "text-red-500 font-bold self-center";
-                    badge.innerText = "Applicant Rejected";
-                    footer.appendChild(badge);
-                } else {
-                    const badge = document.createElement('span');
-                    badge.className = "text-green-500 font-bold self-center";
-                    badge.innerText = "Applicant Hired";
-                    footer.appendChild(badge);
-                }
+                document.getElementById('emp-ms-list').innerHTML = mHtml;
             });
         }
 
-        function processAccept(aid, oid, title) { 
-            if(!confirm("Are you sure you want to hire this candidate?")) return;
-            
-            fetch('/api/accept_app/' + aid, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => { 
-                if(data.success) { 
-                    closeModal('applicant-detail-modal'); 
-                    openEmpModal(oid, title); // Refresh list
-                    // Also reload main page to update table counts
-                    setTimeout(() => location.reload(), 1000); 
-                } else {
-                    alert("Error processing application.");
-                }
-            }); 
+        function approveMilestone(mId, oid) {
+            if(!confirm("Approve this milestone and release payment?")) return;
+            fetch(`/api/approve_milestone/${mId}/${oid}`, { method: 'POST' }).then(r => r.json()).then(d => { if(d.success) { location.reload(); } else { alert("Error: Could not approve milestone."); } });
         }
 
-        // =====================================
-        // STUDENT LOGIC
-        // =====================================
-        function addSkill() {
-            const skill = document.getElementById('new-skill').value.trim(); 
-            if(!skill) return;
-            
-            fetch('/api/add_skill', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({skill: skill}) 
-            })
-            .then(res => res.json())
-            .then(data => { 
-                if(data.success) location.reload(); 
-            });
-        }
+        function rejectMilestone(mId) { if(!confirm("Send this milestone back to the student?")) return; fetch(`/api/reject_milestone/${mId}`, { method: 'POST' }).then(r => r.json()).then(d => { if(d.success) location.reload(); }); }
+
+        function addSkill() { const skill = document.getElementById('new-skill').value.trim(); if(!skill) return; fetch('/api/add_skill', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({skill: skill}) }).then(res => res.json()).then(data => { if(data.success) location.reload(); }); }
 
         function openStuModal(aid, oid) {
-            document.getElementById('stu-modal').classList.remove('hidden');
+            currentStuAppId = aid; 
             
-            fetch(`/api/student_app/${aid}/${oid}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('sm-title').innerText = data.job.RoleTitle; 
-                document.getElementById('sm-company').innerText = data.job.BusinessName; 
-                document.getElementById('sm-loc').innerText = `📍 ${data.job.City}`; 
+            document.getElementById('stu-modal').classList.remove('hidden'); 
+            document.getElementById('sm-milestone-area').classList.add('hidden'); 
+            document.getElementById('sm-escrow-area').classList.add('hidden'); 
+            document.getElementById('stu-rate-btn-container').classList.add('hidden'); 
+            document.getElementById('sm-interview-banner').classList.add('hidden');
+            const withdrawArea = document.getElementById('sm-withdraw-area');
+            if (withdrawArea) withdrawArea.classList.add('hidden');
+
+            fetch(`/api/student_app/${aid}/${oid}`).then(res => res.json()).then(data => {
+                document.getElementById('sm-title').innerText = data.job.RoleTitle || "Unknown Role"; 
+                document.getElementById('sm-company').innerText = data.job.BusinessName || "Unknown Company"; 
+                document.getElementById('sm-loc').innerText = `📍 ${data.job.City || "Unknown Location"}`; 
                 document.getElementById('sm-desc').innerText = data.job.Description || "No description provided.";
                 
-                let sHtml = ""; 
-                if(data.skills) {
-                    data.skills.forEach(s => sHtml += `<li>${s}</li>`); 
+                let sHtml = ""; if(data.skills && data.skills.length > 0) { data.skills.forEach(s => { sHtml += `<li>${s}</li>`; }); } document.getElementById('sm-skills').innerHTML = sHtml || "<li class='list-none italic text-slate-400'>No specific skills listed.</li>";
+                
+                document.getElementById('sm-status').innerText = data.status || "Unknown";
+                const rDot = document.getElementById('dot-reviewed'); const rTxt = document.getElementById('txt-reviewed'); const fDot = document.getElementById('dot-final'); const fTxt = document.getElementById('txt-final');
+                const activeDot = "absolute -left-[31px] top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-white"; const activeTxt = "text-sm font-bold text-slate-800"; const inactiveDot = "absolute -left-[31px] top-1 w-3 h-3 bg-slate-200 rounded-full ring-4 ring-white"; const inactiveTxt = "text-sm font-medium text-slate-400"; const rejectDot = "absolute -left-[31px] top-1 w-3 h-3 bg-red-500 rounded-full ring-4 ring-white"; const rejectTxt = "text-sm font-bold text-red-600";
+
+                if (data.interviewTime) {
+                    document.getElementById('sm-interview-banner').classList.remove('hidden');
+                    document.getElementById('sm-interview-time').innerText = new Date(data.interviewTime).toLocaleString();
                 }
-                document.getElementById('sm-skills').innerHTML = sHtml || "<li class='list-none italic text-slate-400'>No specific skills listed.</li>";
-                
-                // Status Tracker Logic
-                document.getElementById('sm-status').innerText = data.status;
-                const rDot = document.getElementById('dot-reviewed');
-                const rTxt = document.getElementById('txt-reviewed');
-                const fDot = document.getElementById('dot-final');
-                const fTxt = document.getElementById('txt-final');
-                
-                const activeDot = "absolute -left-[31px] top-1 w-3 h-3 bg-blue-500 rounded-full ring-4 ring-white";
-                const activeTxt = "text-sm font-bold text-slate-800";
-                const inactiveDot = "absolute -left-[31px] top-1 w-3 h-3 bg-slate-200 rounded-full ring-4 ring-white";
-                const inactiveTxt = "text-sm font-medium text-slate-400";
-                const rejectDot = "absolute -left-[31px] top-1 w-3 h-3 bg-red-500 rounded-full ring-4 ring-white";
-                const rejectTxt = "text-sm font-bold text-red-600";
+
+                // Show withdraw button if status is Pending
+                if (data.status === 'Pending' && withdrawArea) {
+                    withdrawArea.classList.remove('hidden');
+                }
 
                 if (data.status === 'Accepted') { 
-                    rDot.className = activeDot; rTxt.className = activeTxt; 
-                    fDot.className = activeDot; fTxt.className = activeTxt; 
-                    fTxt.innerText = "Offer Accepted"; 
-                } else if (data.status === 'Rejected') { 
-                    rDot.className = activeDot; rTxt.className = activeTxt; 
-                    fDot.className = rejectDot; fTxt.className = rejectTxt; 
-                    fTxt.innerText = "Application Rejected"; 
-                } else { 
-                    rDot.className = activeDot; rTxt.className = activeTxt; 
-                    fDot.className = inactiveDot; fTxt.className = inactiveTxt; 
-                    fTxt.innerText = "Offer / Rejected"; 
-                }
+                    rDot.className = activeDot; rTxt.className = activeTxt; fDot.className = activeDot; fTxt.className = activeTxt; fTxt.innerText = "Offer Accepted"; 
+                    document.getElementById('sm-milestone-area').classList.remove('hidden'); document.getElementById('sm-escrow-area').classList.remove('hidden'); document.getElementById('sm-escrow').innerText = `₹${data.escrow}`;
+                    
+                    let mHtml = "";
+                    if (data.milestones && data.milestones.length > 0) {
+                        data.milestones.forEach(m => {
+                            let action = "";
+                            if (m.ApprovalStatus === 'Pending') { action = `<button onclick="submitStudentWork(${m.MilestoneID})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-[10px] font-bold cursor-pointer shadow-sm transition">Mark as Done</button>`; } else if (m.ApprovalStatus === 'Submitted') { action = `<span class="text-orange-500 font-bold text-[10px] uppercase bg-orange-50 px-2 py-1 rounded border border-orange-200">Under Review</span>`; } else { action = `<span class="text-green-500 font-bold text-[10px] uppercase bg-green-50 px-2 py-1 rounded border border-green-200">Approved ✓</span>`; }
+                            mHtml += `<div class="flex justify-between items-center bg-slate-50 p-3 border border-slate-200 rounded-lg mb-2"><div><p class="text-sm font-bold text-slate-800">${m.Description}</p><p class="text-xs text-slate-500">Due: ${m.Deadline}</p></div><div class="text-right flex flex-col items-end gap-1"><p class="text-sm font-bold text-slate-800 mb-1">₹${m.Payout}</p><div>${action}</div></div></div>`;
+                        });
+                    } else { mHtml = "<p class='text-xs text-slate-400 italic'>Waiting for employer to assign milestones...</p>"; }
+                    document.getElementById('sm-milestone-list').innerHTML = mHtml;
+
+                    if (data.job.JobStatus === 'Funded') {
+                        document.getElementById('stu-rate-btn-container').classList.remove('hidden');
+                        document.getElementById('trigger-emp-rating').onclick = () => openRatingModal(aid, oid, 'Student');
+                    }
+
+                } else if (data.status === 'Rejected') { rDot.className = activeDot; rTxt.className = activeTxt; fDot.className = rejectDot; fTxt.className = rejectTxt; fTxt.innerText = "Application Rejected"; } else { rDot.className = activeDot; rTxt.className = activeTxt; fDot.className = inactiveDot; fTxt.className = inactiveTxt; fTxt.innerText = "Offer / Rejected"; }
             });
         }
+
+        function submitStudentWork(mId) { if(!confirm("Submit this milestone for review?")) return; fetch(`/api/submit_milestone_work/${mId}`, { method: 'POST' }).then(r => r.json()).then(d => { if(d.success) location.reload(); }); }
     </script>
 </body>
 </html>
